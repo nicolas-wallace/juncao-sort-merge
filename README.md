@@ -1,4 +1,4 @@
-# CK0095 - Trabalho III - Junção Sort-Merge
+# Junção Sort-Merge
 
 ## Descrição
 
