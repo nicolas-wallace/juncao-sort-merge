@@ -1,5 +1,5 @@
 /*
- * CK0095 - Sistemas de Bancos de Dados - 2026-1
+ * Sistemas de Bancos de Dados - 2026-1
  * Trabalho III - Junção Sort-Merge
  *
  * Implementação do operador Sort-Merge Join com:
@@ -692,12 +692,65 @@ void runTests(const Table& result) {
 }
 
 // ============================================================
+// Escrita do resultado em arquivo
+// ============================================================
+
+/**
+ * Grava o resultado completo da junção em um arquivo .txt.
+ * Cria o arquivo se não existir. Se já existir, sobrescreve.
+ * Retorna true em caso de sucesso, false em caso de erro.
+ */
+bool writeResultToFile(const Table& table, const std::string& filename) {
+    std::ofstream file(filename);
+
+    if (!file.is_open()) {
+        std::cerr << "[ERRO] Não foi possível criar o arquivo: " << filename << std::endl;
+        return false;
+    }
+
+    const int COL_WIDTH = 25;
+    const int total_width = table.schema.num_cols * (COL_WIDTH + 2);
+
+    // Cabeçalho
+    file << "Sort-Merge Join - Resultado Completo" << std::endl;
+    file << "Tuplas: " << table.totalTuples()
+         << " | Páginas: " << table.num_pages() << std::endl;
+    file << std::string(total_width, '=') << std::endl;
+
+    for (const auto& name : table.schema.col_names) {
+        std::string s = name.substr(0, COL_WIDTH - 1);
+        file << "| " << s << std::string(COL_WIDTH - (int)s.size(), ' ');
+    }
+    file << "|" << std::endl;
+    file << std::string(total_width, '-') << std::endl;
+
+    // Tuplas, página por página
+    int page_num = 1;
+    for (const auto& page : table.pages) {
+        for (int i = 0; i < page.num_tuples; i++) {
+            for (int j = 0; j < (int)page.tuples[i].cols.size(); j++) {
+                std::string s = page.tuples[i].cols[j];
+                if ((int)s.size() > COL_WIDTH - 1)
+                    s = s.substr(0, COL_WIDTH - 4) + "...";
+                file << "| " << s << std::string(COL_WIDTH - (int)s.size(), ' ');
+            }
+            file << "|" << std::endl;
+        }
+        // Separador entre páginas
+        file << std::string(total_width, '-') << " pag." << page_num++ << std::endl;
+    }
+
+    file.close();
+    return true;
+}
+
+// ============================================================
 // Main
 // ============================================================
 
 int main(int argc, char* argv[]) {
     std::cout << "=================================================" << std::endl;
-    std::cout << " CK0095 - Sistemas de Bancos de Dados - 2026-1  " << std::endl;
+    std::cout << " Sistemas de Bancos de Dados - 2026-1       " << std::endl;
     std::cout << " Trabalho III - Junção Sort-Merge                " << std::endl;
     std::cout << "=================================================" << std::endl;
     std::cout << "Buffer: B=" << BUFFER_FRAMES << " frames | "
@@ -734,6 +787,12 @@ int main(int argc, char* argv[]) {
 
     // --- Testes de validação ---
     runTests(result);
+
+    // --- Grava resultado completo em arquivo ---
+    std::string output_file = "resultado_join.txt";
+    std::cout << "\n[Saída] Gravando resultado completo em '" << output_file << "'..." << std::endl;
+    if (writeResultToFile(result, output_file))
+        std::cout << "[Saída] Arquivo gravado com sucesso." << std::endl;
 
     // --- Exibição dos resultados ---
     std::cout << "\n=== Resultado da Junção (primeiras 20 tuplas) ===" << std::endl;
